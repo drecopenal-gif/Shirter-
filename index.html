@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+ content="width=device-width, initial-scale=1.0">
+    <title>Secure Payment & Link Unblocker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', sans-serif;
+        }
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            background: #ffffff;
+            width: 100%;
+            max-width: 400px;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        h2, h3 {
+            color: #333333;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+        .input-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+        .input-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #555555;
+            margin-bottom: 5px;
+        }
+        input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 5px rgba(102, 126, 234, 0.3);
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            font-weight: 600;
+            font-size: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: opacity 0.2s;
+        }
+        button:hover {
+            opacity: 0.9;
+        }
+        #gen-result {
+            margin-top: 15px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            word-break: break-all;
+            font-size: 13px;
+            color: #28a745;
+            border: 1px dashed #28a745;
+            text-align: left;
+        }
+        #gen-result a {
+            color: #667eea;
+            font-weight: 600;
+            text-decoration: underline;
+        }
+        .loading-spinner {
+            color: #666;
+            font-size: 14px;
+            margin: 20px 0;
+        }
+        #qr-section img {
+            width: 200px;
+            height: 200px;
+            border-radius: 8px;
+            border: 1px solid #eee;
+            margin: 15px 0;
+            padding: 5px;
+            background: white;
+        }
+        #show-amt {
+            font-size: 18px;
+            font-weight: 700;
+            color: #28a745;
+            margin-bottom: 15px;
+        }
+        #link-section a {
+            background: #28a745;
+            color: white;
+            display: block;
+            text-decoration: none;
+            padding: 14px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 15px;
+            box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+            transition: background 0.2s;
+        }
+        #link-section a:hover {
+            background: #218838;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- ADMIN PANEL BOX -->
+        <div id="admin-box">
+            <h3>Admin Link Generator</h3>
+            <div class="input-group">
+                <label>Amount (₹)</label>
+                <input type="number" id="new-amount" placeholder="e.g. 10">
+            </div>
+            <div class="input-group">
+                <label>Main Target Link</label>
+                <input type="text" id="new-link" placeholder="https://example.com">
+            </div>
+            <button onclick="generatePaymentLink()">Generate Link</button>
+            <div id="gen-result" style="display: none;"></div>
+        </div>
+
+        <!-- PAYMENT & LINK UNLOCK SECTION -->
+        <div id="user-box" style="display: none;">
+            <h2>Complete Payment</h2>
+            <p id="loading-text" class="loading-spinner">Verifying payment details...</p>
+
+            <div id="qr-section" style="display: none;">
+                <p style="font-size: 14px; color: #666;">Scan QR code using FamPay or any UPI App:</p>
+                <img id="dynamic-qr" src="" alt="UPI QR Code">
+                <div id="show-amt"></div>
+                <button onclick="verifyPayment()">I Have Paid, Get Link</button>
+            </div>
+
+            <div id="link-section" style="display: none;">
+                <p style="color: #28a745; font-weight: 600; margin-bottom: 15px;">Payment Verified Successfully!</p>
+                <a id="final_download_link" href="#" target="_blank">Access Your Link</a>
+            </div>
+        </div>
+    </div>
+
+<script>
+    const API_URL = "https://script.google.com/macros/s/AKfycbw0jwT-1UAeHmsILaJuvOEc7efWJY6WxDxPmuDTa6vEUz1u5CuR1p7HCu8/exec"; 
+    const MY_UPI_ID = "9173456004@fam"; 
+    const MY_NAME = "Limbachiya Chintan Balavantkumar";
+    const HOSTED_URL = "https://drecopenal-gif.github.io/Shirter-/";
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const incomingLink = urlParams.get('target');
+
+    if (incomingLink) {
+        document.getElementById("admin-box").style.display = "none";
+        document.getElementById("user-box").style.display = "block";
+        loadPaymentPage(incomingLink);
+    } else {
+        document.getElementById("admin-box").style.display = "block";
+        document.getElementById("user-box").style.display = "none";
+    }
+
+    async function generatePaymentLink() {
+        let amt = document.getElementById("new-amount").value;
+        let link = document.getElementById("new-link").value;
+        if(!amt || !link) { alert("Please fill both amount and link!"); return; }
+
+        let resDiv = document.getElementById("gen-result");
+        resDiv.style.display = "block";
+        resDiv.innerText = "Generating secure link...";
+
+        try {
+            let res = await fetch(API_URL + "?action=add&amount=" + encodeURIComponent(amt) + "&link=" + encodeURIComponent(link));
+            let data = await res.json();
+            
+            let generatedUrl = HOSTED_URL + "?target=" + encodeURIComponent(link);
+            resDiv.innerHTML = "<b>Generated Link:</b><br><a href='" + generatedUrl + "' target='_blank'>" + generatedUrl + "</a>";
+        } catch(e) { 
+            let generatedUrl = HOSTED_URL + "?target=" + encodeURIComponent(link);
+            resDiv.innerHTML = "<b>Generated Link:</b><br><a href='" + generatedUrl + "' target='_blank'>" + generatedUrl + "</a>";
+        }
+    }
+
+    async function loadPaymentPage(targetLink) {
+        try {
+            let response = await fetch(API_URL + "?link=" + encodeURIComponent(targetLink));
+            let data = await response.json();
+            let amount = data.amount ? data.amount : "10";
+            
+            document.getElementById("loading-text").style.display = "none";
+            document.getElementById("show-amt").innerText = "Amount to Pay: ₹" + amount;
+            let upiLink = "upi://pay?pa=" + MY_UPI_ID + "&pn=" + encodeURIComponent(MY_NAME) + "&am=" + amount + "&cu=INR";
+            let qrApiUrl = "https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=" + encodeURIComponent(upiLink);
+            document.getElementById("dynamic-qr").src = qrApiUrl;
+            document.getElementById("qr-section").style.display = "block";
+        } catch (error) { 
+            document.getElementById("loading-text").style.display = "none";
+            document.getElementById("show-amt").innerText = "Amount to Pay: ₹10";
+            let upiLink = "upi://pay?pa=" + MY_UPI_ID + "&pn=" + encodeURIComponent(MY_NAME) + "&am=10&cu=INR";
+            let qrApiUrl = "https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=" + encodeURIComponent(upiLink);
+            document.getElementById("dynamic-qr").src = qrApiUrl;
+            document.getElementById("qr-section").style.display = "block";
+        }
+    }
+
+    function verifyPayment() {
+        document.getElementById("final_download_link").href = incomingLink;
+        document.getElementById("qr-section").style.display = "none";
+        document.getElementById("link-section").style.display = "block";
+    }
+</script>
+</body>
+</html>
